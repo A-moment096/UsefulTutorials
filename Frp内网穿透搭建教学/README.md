@@ -344,7 +344,10 @@ Linux通过指令进入程序窗口查看日志，如果出现报错，可以发
 
 > **❗️注意**：请先确保系统使用 systemd，且注册服务需要使用管理员权限
 
-### 写一个 frps.service
+### 🔹 1. 写一个 frp 的 service
+
+**在搭载 frp 服务端 (frps) 的机器上注册服务：**
+
 在 /etc/systemd/system/ 下创建文件 frps.service，内容如下：
 
 ```
@@ -366,7 +369,8 @@ WantedBy = multi-user.target
 ```
 记得把上面的 `<frps路径>` 与 `<frps.toml路径>` 更换为你实际的文件路径。
 
-### 写一个 frpc.service
+**在搭载 frp 客户端 (frpc) 的机器上注册服务：**
+
 和上面类似，在 /etc/systemd/system/ 下创建文件 frpc.service：
 
 ```
@@ -392,7 +396,7 @@ WantedBy=multi-user.target
 ```
 还是一样，把上面的 `<frpc路径>` 与 `<frpc.toml路径>` 更换为你实际的文件路径。
 
-### 启动服务
+### 🔹 2.启动服务
 
 使用下面的命令来将 `frpc` 或者 `frps` 注册为系统服务：
 
