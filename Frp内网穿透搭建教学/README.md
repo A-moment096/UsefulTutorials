@@ -55,7 +55,16 @@ Linux查看系统架构的指令： **`uname -m`**
 
 **📌搞清楚自己的系统和架构后就可以下载文件了**
 
-**Windows下载方式**：愣着干什么？去点击下载啊！下载完把zip解压出来，然后进入文件夹。
+**Windows下载方式**：愣着干什么？去点击下载啊！下载完把zip解压出来，然后进入文件夹。如果浏览器报毒，可以用 `curl` 下载：
+```sh
+#  Windows AMD64(x86_64)架构下载
+curl -LO https://github.com/fatedier/frp/releases/download/v0.61.1/frp_0.61.1_windows_amd64.zip
+```
+如果 Windows Defender 报毒，可以先创建一个文件夹，然后把这个文件夹添加到 Windows Denfender 的排除名单。比如假设使用 `C:\frp` 来存放下载好以及后续运行的 `frp` 压缩包，则命令会变为：
+```sh
+#  下载到 C:\frp 文件夹中，文件命名为 frp.zip。
+curl -Lo C:\frp\frp.zip https://github.com/fatedier/frp/releases/download/v0.61.1/frp_0.61.1_windows_amd64.zip
+```
 
 **Linux下载方式**:
 ```sh
@@ -329,6 +338,79 @@ Linux通过指令进入程序窗口查看日志，如果出现报错，可以发
 他肯定知道哪里出问题了，解决速度肯定比我快。
 
 ---
+
+## 额外：添加 systemd service
+如果你的 frps 或者 frpc 运行在一个使用 systemd 的 Linux 操作系统，你可以把 frp 服务注册为系统服务，方便管理或者开机自启动等。
+
+> **❗️注意**：请先确保系统使用 systemd，且注册服务需要使用管理员权限
+
+### 写一个 frps.service
+在 /etc/systemd/system/ 下创建文件 frps.service，内容如下：
+
+```
+[Unit]
+Description = Frp Server Service
+After = network.target syslog.target
+Wants = network.target
+
+[Service]
+Type = simple
+User = root
+Restart=on-failure
+RestartSec=5s
+ExecStart = <frps路径> -c <frps.toml路径>
+ExecReload = <frps路径> reload -c <frps.toml路径>
+
+[Install]
+WantedBy = multi-user.target
+```
+记得把上面的 `<frps路径>` 与 `<frps.toml路径>` 更换为你实际的文件路径。
+
+### 写一个 frpc.service
+和上面类似，在 /etc/systemd/system/ 下创建文件 frpc.service：
+
+```
+[Unit]
+Description=Frp Client Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Restart=on-failure
+RestartSec=5s
+ExecStart = <frpc路径> -c <frpc.toml路径>
+ExecReload = <frpc路径> reload -c <frpc.toml路径>
+LimitNOFILE=65535
+
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+```
+还是一样，把上面的 `<frpc路径>` 与 `<frpc.toml路径>` 更换为你实际的文件路径。
+
+### 启动服务
+
+使用下面的命令来将 `frpc` 或者 `frps` 注册为系统服务：
+
+```sh
+#  注册 frps：
+systemectl enable --now frps.service
+#  注册 frpc:
+systemectl enable --now frpc.service
+```
+
+可以通过 `journalctl` 来查看日志，以下用 frps 来举例：
+
+```sh
+# 如果需要实时查看日志情况：
+journalctl -u frps.service -f
+# 如果需要查看 frps 的所有日志：
+journalctl -u frps.service -a
+```
 
 ## 📌 结语
 这个配置总体来说没有太难，只有两个配置文件。
